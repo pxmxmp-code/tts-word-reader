@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 export const metadata = {
   title: "文档朗读",
   description: "保存、阅读并朗读 Word、PDF、图片和文本资料",
+  icons: { icon: "/favicon.svg" },
 }
 
 export default function RootLayout({

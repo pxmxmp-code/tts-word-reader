@@ -11,6 +11,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [checking, setChecking] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [registering, setRegistering] = useState(false)
+  const [code, setCode] = useState("")
+  const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
 
@@ -28,9 +31,27 @@ export function AuthGate({ children }: { children: ReactNode }) {
     event.preventDefault()
     setBusy(true)
     setError("")
-    const { error } = await browserDb().auth.signInWithPassword({ email, password })
-    if (error) setError("登录失败，请检查邮箱和密码是否正确")
-    setBusy(false)
+    setMessage("")
+    try {
+      if (registering) {
+        const response = await fetch("/api/register", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password, code }),
+        })
+        const result = await response.json()
+        if (!response.ok) { setError(result.error || "注册失败，请稍后重试"); return }
+        setRegistering(false)
+        setCode("")
+        setMessage("注册成功，请使用邮箱和密码登录")
+      } else {
+        const { error } = await browserDb().auth.signInWithPassword({ email, password })
+        if (error) setError("登录失败，请检查邮箱和密码是否正确")
+      }
+    } catch {
+      setError("请求失败，请稍后重试")
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (checking) {
@@ -93,8 +114,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <div className="rounded-2xl border bg-card p-6 shadow-xl shadow-black/5 dark:shadow-black/20 sm:p-8">
           <form onSubmit={signIn} className="space-y-4">
             <div className="space-y-1 text-left">
-              <h2 className="text-lg font-semibold text-foreground">欢迎使用</h2>
-              <p className="text-xs text-muted-foreground">请输入管理员邮箱及密码登录</p>
+              <h2 className="text-lg font-semibold text-foreground">{registering ? "创建账号" : "欢迎使用"}</h2>
+              <p className="text-xs text-muted-foreground">{registering ? "请输入邮箱、密码和注册码" : "请输入邮箱及密码登录"}</p>
             </div>
 
             <div className="space-y-3">
@@ -119,12 +140,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-foreground/80 flex items-center gap-1.5">
                   <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                  登录密码
+                  {registering ? "设置密码" : "登录密码"}
                 </label>
                 <div className="relative">
                   <input
                     type="password"
-                    autoComplete="current-password"
+                    autoComplete={registering ? "new-password" : "current-password"}
+                    minLength={registering ? 6 : undefined}
+                    maxLength={registering ? 72 : undefined}
                     required
                     placeholder="••••••••"
                     value={password}
@@ -135,6 +158,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
               </div>
             </div>
 
+            {registering && (
+              <div className="space-y-1.5">
+                <label htmlFor="registration-code" className="text-xs font-medium text-foreground/80">注册码</label>
+                <input id="registration-code" type="password" required value={code} onChange={(event) => setCode(event.target.value)}
+                  className="w-full rounded-xl border border-input bg-background/80 px-3.5 py-2.5 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              </div>
+            )}
+            {message && <p role="status" className="text-xs text-emerald-600">{message}</p>}
             {error && (
               <div
                 role="alert"
@@ -152,21 +183,25 @@ export function AuthGate({ children }: { children: ReactNode }) {
               {busy ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>正在登录…</span>
+                  <span>{registering ? "正在注册…" : "正在登录…"}</span>
                 </>
               ) : (
                 <>
-                  <span>进入工作台</span>
+                  <span>{registering ? "注册账号" : "进入工作台"}</span>
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
           </form>
+          <button type="button" disabled={busy} onClick={() => { setRegistering(!registering); setError(""); setMessage("") }}
+            className="mt-4 w-full text-center text-xs text-primary hover:underline disabled:opacity-50">
+            {registering ? "已有账号？去登录" : "没有账号？使用注册码注册"}
+          </button>
         </div>
 
         {/* Footer info */}
         <p className="text-center text-[11px] text-muted-foreground">
-          个人私有化部署 · 基于 Supabase 鉴权与私有加密存储
+          基于 Supabase 鉴权与私有存储
         </p>
       </div>
     </main>

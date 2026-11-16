@@ -267,7 +267,7 @@ export function PlaybackControls({
                 <Slider
                   value={[sliderValue]}
                   min={5}
-                  max={25}
+                  max={20}
                   step={1}
                   onValueChange={handleSpeedSliderChange}
                   className="cursor-pointer"
@@ -275,7 +275,7 @@ export function PlaybackControls({
                 <div className="flex justify-between text-[10px] text-muted-foreground mt-1.5">
                   <span>0.5x 慢速</span>
                   <span>1.0x 正常</span>
-                  <span>2.5x 极速</span>
+                  <span>2.0x 极速</span>
                 </div>
               </div>
             </PopoverContent>

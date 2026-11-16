@@ -62,6 +62,9 @@ export function DocumentViewer({
     })
   }, [html])
 
+  // Keep React from replacing sentence nodes and clearing their reading highlight on re-render.
+  const documentMarkup = useMemo(() => ({ __html: sanitizedHtml }), [sanitizedHtml])
+
   // Update sentence highlighting and auto-scroll
   useEffect(() => {
     const root = documentRef.current
@@ -78,7 +81,7 @@ export function DocumentViewer({
     if (followReading && current[0]) {
       current[0].scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" })
     }
-  }, [sanitizedHtml, currentSentenceIndex, followReading])
+  }, [sanitizedHtml, currentSentenceIndex, followReading, isLoading, fontFamily, fontSize, lineHeight, maxWidth])
 
   // Click-to-read handler
   const handleContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
@@ -128,7 +131,7 @@ export function DocumentViewer({
                 MAX_WIDTH_CLASSES[maxWidth] || MAX_WIDTH_CLASSES.normal
               )}
               style={{ fontSize: `${fontSize}%` }}
-              dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+              dangerouslySetInnerHTML={documentMarkup}
             />
           </div>
         ) : (

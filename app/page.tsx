@@ -47,7 +47,8 @@ import {
   DEFAULT_TTS_STYLE,
 } from "@/lib/ttsOptions"
 import type { Sentence } from "@/lib/types"
-import { markdownToHtml } from "@/lib/markdown"
+import { markdownToHtml, textToHtml } from "@/lib/markdown"
+import { shouldIgnoreReaderShortcut } from "@/lib/readerKeyboard"
 import { getDocument, saveReadingIndex, type StoredDocument } from "@/lib/documentStore"
 import { uploadDocument } from "@/lib/uploadDocument"
 import { browserDb } from "@/lib/supabase/client"
@@ -109,6 +110,7 @@ const TTSReader = () => {
     handlePreviousSentence,
     handleNextSentence,
     handleProgressChange,
+    handleSelectSentence,
   } = usePlayback({
     sentences,
     documentId: currentDocument?.id || null,
@@ -207,9 +209,7 @@ const TTSReader = () => {
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if focused in inputs or textareas
-      const activeEl = document.activeElement
-      if (activeEl && ["INPUT", "TEXTAREA"].includes(activeEl.tagName)) return
+      if (shouldIgnoreReaderShortcut(e)) return
 
       if (e.code === "Space") {
         e.preventDefault()
@@ -254,7 +254,9 @@ const TTSReader = () => {
       assetUrls.set(asset.path.split("/").pop() || asset.path, asset.url)
     }
     const html = DOMPurify.sanitize(
-      document.html || markdownToHtml(document.markdown || "", assetUrls),
+      document.sourceType === "text" && document.markdown !== undefined
+        ? textToHtml(document.markdown)
+        : document.html || markdownToHtml(document.markdown || "", assetUrls),
       {
         USE_PROFILES: { html: true },
         ADD_ATTR: ["class", "data-reader-sentence"],
@@ -830,7 +832,7 @@ const TTSReader = () => {
               currentSentenceIndex={currentSentenceIndex}
               fontSize={fontSize}
               followReading={followReading}
-              onSelectSentence={handleProgressChange}
+              onSelectSentence={handleSelectSentence}
               paperTheme={paperTheme}
               fontFamily={fontFamily}
               lineHeight={lineHeight}

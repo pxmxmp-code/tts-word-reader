@@ -51,13 +51,19 @@ async function processJob(job: Job) {
   const result = await response.json()
   if (!response.ok || result.code !== 0) throw new Error(result.msg || "查询 MinerU 失败")
   const item = result.data?.extract_result?.[0]
-  if (!item || item.state === "pending" || item.state === "running" || item.state === "waiting-file") return "processing"
-  if (item.state === "failed") {
-    const error = item.err_msg || "MinerU 解析失败"
-    await Promise.all([
-      db.from("parse_jobs").update({ state: "failed", error, updated_at: new Date().toISOString() }).eq("document_id", job.document_id),
-      db.from("documents").update({ status: "failed", error }).eq("id", job.document_id),
-    ])
+  if (!item) return "processing"
+  const uploadTimedOut = item.state === "waiting-file" && Date.now() - Date.parse(job.updated_at) > 15 * 60_000
+  if (item.state === "failed" || uploadTimedOut) {
+    const error = uploadTimedOut ? "向 MinerU 上传文件超时，请从文档库重试解析" : item.err_msg || "MinerU 解析失败"
+    const { data: failed, error: jobError } = await db.from("parse_jobs")
+      .update({ state: "failed", error, updated_at: new Date().toISOString() })
+      .eq("document_id", job.document_id).eq("mineru_id", job.mineru_id).eq("state", job.state)
+      .select("document_id").maybeSingle()
+    if (jobError) throw jobError
+    if (!failed) return "processing"
+    const { error: documentError } = await db.from("documents").update({ status: "failed", error })
+      .eq("id", job.document_id).in("status", ["queued", "processing", "saving"])
+    if (documentError) throw documentError
     return "failed"
   }
   if (item.state !== "done" || !item.full_zip_url) return "processing"

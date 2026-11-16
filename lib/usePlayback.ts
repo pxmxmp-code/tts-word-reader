@@ -690,8 +690,10 @@ export function usePlayback({ sentences, documentId, selectedVoice, selectedStyl
   };
   
   // 处理进度条变化
-  const handleProgressChange = (newIndex: number) => {
-    const shouldContinuePlaying = isPlayingRef.current;
+  const handleProgressChange = (newIndex: number, startPlaying = false) => {
+    if (!Number.isInteger(newIndex) || newIndex < 0 || newIndex >= sentences.length) return;
+    const shouldContinuePlaying = startPlaying || isPlayingRef.current;
+    if (startPlaying) setPlayingState(true);
     const sessionId = shouldContinuePlaying ? beginPlaybackSession() : playbackSessionRef.current;
 
     // 暂停当前音频
@@ -798,9 +800,11 @@ export function usePlayback({ sentences, documentId, selectedVoice, selectedStyl
     currentIndexRef.current = index
   }
 
+  const handleSelectSentence = (index: number) => handleProgressChange(index, true)
+
   return {
     isPlaying, isAudioLoading, currentSentenceIndex, setPosition,
     setPlayingState, stopPlaybackAndClearCache,
-    handleTogglePlayback, handlePreviousSentence, handleNextSentence, handleProgressChange,
+    handleTogglePlayback, handlePreviousSentence, handleNextSentence, handleProgressChange, handleSelectSentence,
   }
 }

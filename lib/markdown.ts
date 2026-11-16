@@ -4,6 +4,10 @@ const escapeHtml = (value: string) => value
   .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
   .replaceAll('"', "&quot;").replaceAll("'", "&#039;")
 
+export function textToHtml(text: string) {
+  return `<div class="whitespace-pre-wrap">${escapeHtml(text)}</div>`
+}
+
 export function markdownToHtml(markdown: string, assetUrls: Map<string, string> = new Map()) {
   const parser = new Marked({
     async: false,

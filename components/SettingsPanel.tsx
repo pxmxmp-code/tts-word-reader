@@ -38,6 +38,7 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const [clearing, setClearing] = useState(false)
   const [clearSuccess, setClearSuccess] = useState(false)
+  const [clearError, setClearError] = useState("")
 
   const femaleVoices = voices.filter((v) => v.group === "female")
   const maleVoices = voices.filter((v) => v.group === "male")
@@ -47,10 +48,13 @@ export function SettingsPanel({
     if (!onClearCache) return
     setClearing(true)
     setClearSuccess(false)
+    setClearError("")
     try {
       await onClearCache()
       setClearSuccess(true)
       setTimeout(() => setClearSuccess(false), 3000)
+    } catch (error) {
+      setClearError(error instanceof Error ? error.message : "清理音频缓存失败，请重试")
     } finally {
       setClearing(false)
     }
@@ -180,6 +184,7 @@ export function SettingsPanel({
             )}
           </Button>
         )}
+        {clearError && <p role="alert" className="text-xs text-destructive">{clearError}</p>}
       </div>
 
       {/* Account Info note */}

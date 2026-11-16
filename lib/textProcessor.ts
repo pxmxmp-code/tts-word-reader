@@ -23,21 +23,22 @@ export function extractSentencesFromHtml(html: string): Sentence[] {
     },
   })
 
-  const groups = new Map<Element, Array<{ nodeIndex: number; text: string }>>()
+  const groups: Array<Array<{ nodeIndex: number; text: string }>> = []
+  let previousBlock: Element | null = null
   let node: Node | null
   let nodeIndex = 0
   while ((node = walker.nextNode())) {
     const element = node.parentElement
     if (!element) continue
     const block = element.closest(BLOCK_SELECTOR) || element
-    const parts = groups.get(block) || []
-    parts.push({ nodeIndex, text: node.textContent || "" })
-    groups.set(block, parts)
+    if (block !== previousBlock) groups.push([])
+    groups[groups.length - 1].push({ nodeIndex, text: node.textContent || "" })
+    previousBlock = block
     nodeIndex += 1
   }
 
   const sentences: Sentence[] = []
-  for (const nodes of groups.values()) {
+  for (const nodes of groups) {
     let position = 0
     const parts: TextPart[] = nodes.map((part) => {
       const mapped = { ...part, start: position, end: position + part.text.length }

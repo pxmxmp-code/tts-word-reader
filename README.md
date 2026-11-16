@@ -5,7 +5,7 @@
 ## 部署配置
 
 1. 新建 Supabase 免费项目，执行 `supabase/migrations/` 中的迁移。项目使用私有 `documents` 与 `audio` Storage 桶。
-2. 在 Supabase Auth → Users 中设置自己的邮箱密码账号，并关闭公开注册。将这个邮箱写入服务端 `OWNER_EMAIL` 环境变量；其他账号不能调用文档、MinerU 与 TTS 接口。应用只提供邮箱密码登录。
+2. 在 Supabase Auth 设置中**关闭公开注册**（包括邮箱注册），防止绕过网站的注册码校验。网站通过服务端管理接口创建账号；用户使用邮箱、密码和注册码注册后即可登录。默认注册码为 `pxmxmp`，可通过服务端 `REGISTRATION_CODE` 修改。此注册方式直接确认邮箱，不发送验证邮件。
 3. 复制 `.env.example` 为 `.env.local`，填写 Supabase、MinerU 与定时任务环境变量。`SUPABASE_SECRET_KEY` 和 `MINERU_API_TOKEN` 只放在服务端。
 4. `bun install`、`bun run dev`。生产环境继续部署到 Vercel，并配置同名环境变量。
 
@@ -15,7 +15,7 @@
 
 ## 使用
 
-登录后上传文件。DOCX、TXT、Markdown 由后端直接解析；PDF、图片和其他 Office 文件由 MinerU 解析。解析中的文档会保留在文档库，关闭页面后仍可继续处理；上传中断时可重新选择同一个文件继续。打开已完成的文档即可播放、暂停、逐句跳转、调整倍速与语音风格。阅读位置和语音设置保存在账号中；音频保存到云端，可在设置中清空，并由定时任务限制缓存规模。
+在登录页面选择注册并输入注册码，注册成功后使用邮箱密码登录。每个账号只能访问自己的文档和设置。登录后上传文件。DOCX、TXT、Markdown 由后端直接解析；PDF、图片和其他 Office 文件由 MinerU 解析。解析中的文档会保留在文档库，关闭页面后仍可继续处理；上传中断时可重新选择同一个文件继续。打开已完成的文档即可播放、暂停、逐句跳转、调整倍速与语音风格。阅读位置和语音设置保存在账号中；音频保存到云端，可在设置中清空，并由定时任务限制缓存规模。
 
 默认 TTS 接口是 `lib/ttsOptions.ts` 中的 VoiceCraft/Edge TTS 桥接服务。可通过服务端环境变量 `TTS_API_ENDPOINT` 替换。
 

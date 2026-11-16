@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto"
 import { NextResponse } from "next/server"
 import { adminDb, currentUser } from "@/lib/supabase/server"
 import { getMinerUServerConfig } from "@/lib/mineruServer"
-import { markdownToHtml } from "@/lib/markdown"
+import { markdownToHtml, textToHtml } from "@/lib/markdown"
 
 export const maxDuration = 300
 
@@ -38,7 +38,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         html = result.value
       } else {
         markdown = await source.text()
-        html = markdownToHtml(markdown)
+        html = document.source_type === "text" ? textToHtml(markdown) : markdownToHtml(markdown)
       }
       const { error } = await db.from("documents").update({
         html, markdown, status: "ready", updated_at: new Date().toISOString(),
